@@ -1,0 +1,974 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>LIMSYS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: dark header with filters, icon sidebar, KPI row, matrix + classification, ranking + score summary, analysis, full idea list. */
+:root{
+  --bg:#E4EDF8; --dot:#D2E0F2; --app:#F3F7FC; --card:#FFFFFF; --soft:#EDF3FB; --fg:#13203B; --muted:#586987; --line:#DCE6F3;
+  --hdr-a:#1D4FD7; --hdr-b:#69B4FF;
+  --acc-a:#2B55C4; --acc-b:#3A7BD5; --acc-ink:#2750B4;
+  --qw:#2563EB; --pl:#6D5BD0; --mo:#0E9AA7; --bi:#E0A030;
+  --qw-ink:#1D4FBF; --pl-ink:#4F3FB0; --mo-ink:#0A6E78; --bi-ink:#7A5200;
+  --on-qw:#FFFFFF; --on-pl:#FFFFFF; --on-mo:#FFFFFF; --on-bi:#2A1900;
+  --shadow:0 8px 24px rgba(40,90,170,.12); --err:#C0262D;
+  --display:'DM Sans',system-ui,sans-serif; --body:'DM Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A1120; --dot:#101A30; --app:#0E182B; --card:#16223F; --soft:#1E2D52; --fg:#EAF1FF; --muted:#9DB0D3; --line:#2A3B63;
+    --hdr-a:#0D1F45; --hdr-b:#1B3F8A;
+    --acc-a:#3F6FE0; --acc-b:#2F8FD8; --acc-ink:#9CC0FF;
+    --qw:#5B9BFF; --pl:#A596FF; --mo:#2DD4D0; --bi:#F5C25B;
+    --qw-ink:#7FB2FF; --pl-ink:#B7A5FF; --mo-ink:#2DD4D0; --bi-ink:#F5C25B;
+    --on-qw:#0A1120; --on-pl:#0A1120; --on-mo:#0A1120; --on-bi:#0A1120;
+    --shadow:0 8px 24px rgba(0,0,0,.4); --err:#FF8A8F; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A1120; --dot:#101A30; --app:#0E182B; --card:#16223F; --soft:#1E2D52; --fg:#EAF1FF; --muted:#9DB0D3; --line:#2A3B63;
+  --hdr-a:#0D1F45; --hdr-b:#1B3F8A;
+  --acc-a:#3F6FE0; --acc-b:#2F8FD8; --acc-ink:#9CC0FF;
+  --qw:#5B9BFF; --pl:#A596FF; --mo:#2DD4D0; --bi:#F5C25B;
+  --qw-ink:#7FB2FF; --pl-ink:#B7A5FF; --mo-ink:#2DD4D0; --bi-ink:#F5C25B;
+  --on-qw:#0A1120; --on-pl:#0A1120; --on-mo:#0A1120; --on-bi:#0A1120;
+  --shadow:0 8px 24px rgba(0,0,0,.4); --err:#FF8A8F; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background-color:var(--bg);
+  background-image:radial-gradient(circle,var(--dot) 0 6px,transparent 7px);
+  background-size:56px 56px;
+  color:var(--fg); font-family:var(--body); font-size:14px; line-height:1.45;
+  padding-block:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+h1,h2,h3,p{margin:0}
+button,select{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:2px solid var(--acc-a);outline-offset:2px}
+.ic{width:20px;height:20px;flex:none}
+.c-all{--c:var(--acc-a);--ci:var(--acc-ink)}
+.c-qw{--c:var(--qw);--ci:var(--qw-ink);--on:var(--on-qw)}
+.c-pl{--c:var(--pl);--ci:var(--pl-ink);--on:var(--on-pl)}
+.c-mo{--c:var(--mo);--ci:var(--mo-ink);--on:var(--on-mo)}
+.c-bi{--c:var(--bi);--ci:var(--bi-ink);--on:var(--on-bi)}
+
+.shell{max-width:1560px;margin:0 auto;border-radius:20px;background:var(--app);box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:116px minmax(0,1fr);grid-template-areas:"hdr hdr" "side main" "ftr ftr"}
+
+/* Header */
+.hdr{grid-area:hdr;background:linear-gradient(100deg,var(--hdr-a),var(--hdr-b));color:#fff;padding:16px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 28px}
+.hb{display:flex;align-items:center;gap:14px;flex:1 1 300px;min-width:0}
+.hb svg{width:48px;height:52px;flex:none}
+.hb h1{font:700 26px/1.1 var(--display);letter-spacing:.04em}
+.hb p{font-size:13px;opacity:.88;margin-top:3px}
+.hu{display:flex;align-items:center;gap:10px}
+.hu small{display:block;font-size:12px;opacity:.85}
+.hu b{font:600 14px var(--body)}
+.hf{display:flex;gap:12px;flex-wrap:wrap}
+.hf label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700}
+.hf select{background:var(--card);color:var(--fg);border:0;border-radius:8px;padding:8px 10px;min-width:150px;font-size:13px;font-weight:500;cursor:pointer}
+.seg{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700}
+.seg-b{display:inline-flex;background:rgba(255,255,255,.16);border-radius:8px;padding:3px;gap:2px;align-self:flex-start}
+.seg-b button{border:0;background:transparent;color:#fff;border-radius:6px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.seg-b button[aria-pressed="true"]{background:var(--card);color:var(--acc-ink)}
+.hup{display:flex;flex-direction:column;gap:4px;align-items:flex-start;max-width:230px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:9px 16px;font:700 12px var(--body);background:#fff;color:#2A1B5C;cursor:pointer;text-align:center}
+.btn:focus-within{outline:2px solid #fff;outline-offset:2px}
+.btn.solid{background:linear-gradient(90deg,var(--acc-a),var(--acc-b));color:#fff}
+.link{background:none;border:0;padding:0;color:inherit;font-size:12px;text-decoration:underline;cursor:pointer;text-align:left}
+#msg{font-size:12px;opacity:.92}
+#msg.err{color:#FFC9CC;font-weight:700}
+
+/* Sidebar */
+.side{grid-area:side;background:var(--card);border-right:1px solid var(--line);padding:12px 0}
+.side-in{position:sticky;top:12px;display:flex;flex-direction:column;gap:6px;min-height:min(560px,calc(100vh - 40px))}
+.nav{display:flex;flex-direction:column}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;color:var(--fg);font-size:12px;font-weight:500;text-decoration:none;text-align:center;border-left:4px solid transparent}
+.nav a:hover{background:var(--soft)}
+.nav a[aria-current="true"]{border-left-color:var(--acc-a);background:color-mix(in srgb,var(--acc-a) 10%,transparent);color:var(--acc-ink);font-weight:700}
+.icon-btn{margin:auto auto 8px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--soft);display:grid;place-items:center;cursor:pointer}
+
+/* Main */
+.main{grid-area:main;padding:18px 20px 24px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px;min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;margin-bottom:12px}
+.ch h2{font:700 14px var(--display);letter-spacing:.04em;text-transform:uppercase;color:var(--acc-ink)}
+.sub{font-size:12px;color:var(--muted)}
+.empty{font-size:13px;color:var(--muted);padding:12px 0}
+section[id],div[id]{scroll-margin-top:12px}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.tile{display:flex;align-items:center;gap:12px;padding:14px;text-align:left;cursor:pointer;width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.tile:hover{border-color:var(--c)}
+.tile[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,var(--card));box-shadow:0 0 0 1px var(--c)}
+.tile .ib{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+.tile .ib svg{width:24px;height:24px}
+.tile strong{display:block;font:700 28px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.tile .tn{display:block;font-size:12.5px;font-weight:500}
+.tile em{font-style:normal;font-size:11.5px;color:var(--ci);font-weight:700}
+
+.row2{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:start}
+.rowe{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+.chart{width:100%;overflow:hidden}
+.chart svg{display:block;width:100%;height:auto}
+.ax{fill:var(--muted);font:500 11px var(--body)}
+.axs{fill:var(--muted);font:500 11px var(--body)}
+.gl{stroke:var(--line);stroke-width:1}
+.area-line{fill:none;stroke:var(--acc-a);stroke-width:3;stroke-linecap:round}
+.tag-t{fill:var(--acc-ink);font:700 12px var(--body)}
+.qd{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 4;opacity:.55}
+.q-qw{fill:var(--qw);fill-opacity:.10}.q-pl{fill:var(--pl);fill-opacity:.10}.q-mo{fill:var(--mo);fill-opacity:.10}.q-bi{fill:var(--bi);fill-opacity:.10}
+.ql{font:700 11px var(--body)}
+.bub{cursor:pointer}
+.bub circle.b{fill:var(--c);stroke:var(--card);stroke-width:2}
+.bub text{fill:var(--on);font:700 12px var(--body);text-anchor:middle;pointer-events:none}
+.bub .sel{fill:none;stroke:var(--fg);stroke-width:2.5}
+.bub:focus-visible{outline:none}
+.bub:focus-visible .b{stroke:var(--fg);stroke-width:3}
+.strip{margin-top:12px;background:var(--soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.strip-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between}
+.strip-h b{font:600 13px var(--display)}
+.strip ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:170px;overflow:auto}
+.strip li{display:flex;gap:10px;align-items:baseline;font-size:12.5px}
+.strip li span{flex:none;min-width:30px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.strip p{font-size:12px;color:var(--muted)}
+.btn.solid.sm{padding:7px 14px}
+
+.dn{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center}
+.donut{display:block;width:170px;height:170px;flex:none}
+.donut circle{fill:none;stroke-width:16}
+.dc-n{font:700 28px var(--display);fill:var(--fg);text-anchor:middle}
+.dc-s{font:500 11px var(--body);fill:var(--muted);text-anchor:middle}
+.leg{display:flex;flex-direction:column;gap:8px;flex:1 1 180px;min-width:0}
+.leg div{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:12.5px}
+.leg i{width:11px;height:11px;border-radius:3px;background:var(--c)}
+.leg b{font-variant-numeric:tabular-nums}
+.leg small{color:var(--muted);min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.rings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+.rings>div{display:flex;align-items:center;justify-content:center;gap:16px;padding:4px 12px;min-width:0}
+.rings>div+div{border-left:1px solid var(--line)}
+.rings .rt{min-width:0}
+.rings svg{width:76px;height:76px;display:block;flex:none}
+.pils{display:flex;flex-direction:column;gap:12px}
+.pil{display:grid;grid-template-columns:34px minmax(110px,32%) minmax(0,1fr) auto;gap:12px;align-items:center;font-size:12.5px}
+.pil .pi{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--acc-a) 14%,transparent);color:var(--acc-ink)}
+.pil .pi svg{width:18px;height:18px}
+.pil .pn{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.pil .vl{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pil .vl small{color:var(--muted);font-weight:500}
+.pil.zero .pn{color:var(--muted)}
+.rings circle{fill:none;stroke-width:7}
+.rings .tr{stroke:var(--soft)}
+.rings .pc{font:700 14px var(--display);fill:var(--fg);text-anchor:middle}
+.rings b{display:block;font-size:13px;font-weight:700}
+.rings small{display:block;font-size:12px;color:var(--muted)}
+
+.tw{overflow-x:auto}
+table.rk{width:100%;min-width:600px;border-collapse:collapse;font-size:12.5px}
+.rk th{background:var(--hdr-a);color:#fff;text-align:left;padding:8px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.rk td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.rk .n{text-align:right;font-variant-numeric:tabular-nums}
+.rk td.idea{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk td.pos{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.rk tr[data-id]{cursor:pointer}
+.rk tr[data-id]:hover td{background:var(--soft)}
+.rk td.sc{font-weight:700}
+.rkf{margin-top:10px}
+
+.sc2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sct{background:var(--soft);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sct small{font-size:11.5px;font-weight:700;color:var(--acc-ink)}
+.sct strong{font:700 26px/1.15 var(--display);font-variant-numeric:tabular-nums}
+.sct span{font-size:11.5px;color:var(--muted)}
+.sct svg{width:100%;height:34px;display:block;margin-top:4px}
+.how p{font-size:12.5px}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.tab{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer}
+.tab[aria-pressed="true"]{background:linear-gradient(90deg,var(--acc-a),var(--acc-b));color:#fff;border-color:transparent;font-weight:700}
+.bar{display:grid;grid-template-columns:minmax(0,34%) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:12px;margin-block:9px}
+.bar .lb small{display:block;color:var(--muted);font-size:11px}
+.trk{height:12px;border-radius:999px;background:var(--soft);overflow:hidden}
+.fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--acc-a),var(--acc-b))}
+.bar .vl{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar .vl small{color:var(--muted);font-weight:500}
+
+.mini{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;width:100%;text-align:left;background:var(--soft);border:0;border-radius:12px;padding:10px;cursor:pointer}
+.row:hover{background:color-mix(in srgb,var(--c) 12%,var(--soft))}
+.row .it{font-size:12.5px}
+.q{display:flex;flex-direction:column;gap:12px}
+.q div{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.q strong{font:700 24px/1 var(--display);min-width:30px;font-variant-numeric:tabular-nums}
+.q p{font-size:12.5px}
+.q small{display:block;color:var(--muted);font-size:11.5px}
+
+.search{display:flex;align-items:center;gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:7px 14px;width:min(300px,100%);color:var(--muted)}
+.search:focus-within{outline:2px solid var(--acc-a);outline-offset:2px}
+.search input{border:0;background:transparent;outline:0;color:var(--fg);font:400 13px var(--body);width:100%;min-width:0}
+.search input::placeholder{color:var(--muted)}
+.fnote{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:10px}
+.fnote .link{color:var(--acc-ink)}
+.list{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow:auto;padding-right:4px}
+details.idea{background:var(--soft);border-radius:12px}
+details.idea summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;cursor:pointer;list-style:none}
+details.idea summary::-webkit-details-marker{display:none}
+details.idea[open] summary{padding-bottom:6px}
+.idn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--display);background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--ci);font-variant-numeric:tabular-nums}
+.it{font-weight:500;font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.im{font-size:11.5px;color:var(--muted);margin-top:2px;display:block}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--ci)}
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px;padding:4px 14px 14px;margin:0}
+.dl div{min-width:0}
+.dl .w{grid-column:1/-1}
+.dl dt{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.dl dd{margin:2px 0 0;font-size:13px;overflow-wrap:anywhere}
+.dl dd.na{color:var(--muted);font-style:italic}
+
+/* Footer */
+.cloud{width:100%;overflow:hidden}
+.cloud svg{display:block;width:100%;height:auto}
+.cw{font-family:var(--display);font-weight:600;cursor:pointer}
+.cw:hover{opacity:.65}
+.cw:focus-visible{outline:2px solid var(--acc-a);outline-offset:2px}
+.ftr{grid-area:ftr;background:linear-gradient(100deg,var(--hdr-a),var(--hdr-b));color:#fff;padding:12px 24px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 24px;font-size:13px}
+.ftr span{min-width:0;overflow-wrap:anywhere}
+
+@media (max-width:1100px){
+  .row2,.rowe{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:720px){
+  .rings{grid-template-columns:minmax(0,1fr);gap:10px}
+  .rings>div+div{border-left:0;border-top:1px solid var(--line);padding-top:12px}
+  .pil{grid-template-columns:34px minmax(0,1fr) auto}
+  .pil .trk{grid-column:2 / 4}
+}
+@media (max-width:820px){
+  .shell{grid-template-columns:minmax(0,1fr);grid-template-areas:"hdr" "side" "main" "ftr"}
+  .side{border-right:0;border-bottom:1px solid var(--line);padding:0}
+  .side-in{position:static;min-height:0;flex-direction:row;align-items:center}
+  .nav{flex-direction:row;overflow-x:auto;flex:1}
+  .nav a{border-left:0;border-bottom:3px solid transparent;flex-direction:row;padding:12px 14px;white-space:nowrap}
+  .nav a[aria-current="true"]{border-bottom-color:var(--acc-a)}
+  .icon-btn{margin:0 10px}
+  .main{padding:16px}
+  .hdr{padding:16px}
+  .hf select{min-width:0;width:100%}
+  .hf label{flex:1 1 140px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .fill{transition:width .4s}
+}
+/* Tema azul degradado (inspirado en el formulario) */
+:root{
+  --bg:#DCEBFF; --app:#F4F8FF; --soft:#E8F1FF; --line:#D3E3FA; --fg:#0F2447; --muted:#53668A;
+  --hdr-a:#0A3A9E; --hdr-b:#2563EB; --hdr-c:#6DB8FF;
+  --acc-a:#1F5FD6; --acc-b:#4FA8F7; --acc-ink:#1A4FBF;
+  --qw:#0B3FA8; --pl:#2F6FEB; --mo:#4FA8F7; --bi:#A9CCF8;
+  --qw-ink:#0B3FA8; --pl-ink:#1D5BD8; --mo-ink:#0B6AB5; --bi-ink:#3A6AAE;
+  --on-qw:#FFFFFF; --on-pl:#FFFFFF; --on-mo:#0A1F44; --on-bi:#0A1F44;
+  --shadow:0 8px 24px rgba(30,80,190,.16);
+}
+body{background:linear-gradient(160deg,#E6F1FF 0%,#C4DBFF 45%,#C8C6FB 100%);background-attachment:fixed}
+.hdr,.ftr{background:linear-gradient(100deg,var(--hdr-a) 0%,var(--hdr-b) 55%,var(--hdr-c) 100%)}
+.card,.tile{background:linear-gradient(180deg,var(--card) 0%,color-mix(in srgb,var(--soft) 55%,var(--card)) 100%)}
+.hb h1{background:linear-gradient(90deg,#fff,#CFE6FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A1730; --app:#0D1B36; --card:#13264A; --soft:#1B3463; --line:#27427A; --fg:#EAF2FF; --muted:#9DB6DE;
+    --hdr-a:#0A2A70; --hdr-b:#1F5FD0; --hdr-c:#3F95E6;
+    --acc-a:#3B7CF0; --acc-b:#4FB0FF; --acc-ink:#9CC7FF;
+    --qw:#2F6FEB; --pl:#5B9BFF; --mo:#8CC8FF; --bi:#C9E2FF;
+    --qw-ink:#6FA3FF; --pl-ink:#8FBAFF; --mo-ink:#A9D6FF; --bi-ink:#D4E8FF;
+    --on-qw:#FFFFFF; --on-pl:#0A1730; --on-mo:#0A1730; --on-bi:#0A1730;
+  }
+  :root:not([data-theme="light"]) body{background:linear-gradient(160deg,#0A1730 0%,#0F2550 55%,#1B2468 100%);background-attachment:fixed}
+}
+:root[data-theme="dark"]{
+  --bg:#0A1730; --app:#0D1B36; --card:#13264A; --soft:#1B3463; --line:#27427A; --fg:#EAF2FF; --muted:#9DB6DE;
+  --hdr-a:#0A2A70; --hdr-b:#1F5FD0; --hdr-c:#3F95E6;
+  --acc-a:#3B7CF0; --acc-b:#4FB0FF; --acc-ink:#9CC7FF;
+  --qw:#2F6FEB; --pl:#5B9BFF; --mo:#8CC8FF; --bi:#C9E2FF;
+  --qw-ink:#6FA3FF; --pl-ink:#8FBAFF; --mo-ink:#A9D6FF; --bi-ink:#D4E8FF;
+  --on-qw:#FFFFFF; --on-pl:#0A1730; --on-mo:#0A1730; --on-bi:#0A1730;
+}
+:root[data-theme="dark"] body{background:linear-gradient(160deg,#0A1730 0%,#0F2550 55%,#1B2468 100%);background-attachment:fixed}
+</style>
+
+<div class="shell" id="top">
+  <header class="hdr">
+    <div class="hb">
+      <svg viewBox="0 0 120 130" aria-hidden="true"><defs><linearGradient id="gBulb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D6E6FF"/><stop offset="1" stop-color="#7FB0FF"/></linearGradient></defs>
+        <path d="M60 12c-20 0-36 15-36 35 0 12 6 20 13 28 4 5 6 9 6 14h34c0-5 2-9 6-14 7-8 13-16 13-28 0-20-16-35-36-35z" fill="url(#gBulb)"/>
+        <rect x="44" y="94" width="32" height="8" rx="4" fill="#BFD8FF" opacity=".9"/><rect x="48" y="106" width="24" height="8" rx="4" fill="#BFD8FF" opacity=".7"/>
+        <path d="M50 60l10-14 10 14" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/></svg>
+      <div><h1>LIMSYS</h1><p>Lean Idea Management System · Dashboard de ideas de mejora</p></div>
+    </div>
+    <div class="hu"><span data-ic="calendar"></span><div><small>Última idea recibida</small><b id="last">–</b></div></div>
+    <div class="hf">
+      <label for="fcls">Filtrar por clasificación<select id="fcls"></select></label>
+      <label for="farea">Filtrar por área<select id="farea"></select></label>
+    </div>
+    <div class="hup">
+      <label class="btn" for="file"><span data-ic="upload"></span>Subir Excel</label>
+      <input class="sr" id="file" type="file" accept=".xlsx,.xlsm,.xls">
+      <div id="msg" role="status" aria-live="polite"></div>
+      <button class="link" id="reset" type="button" hidden>Volver al Excel original</button>
+    </div>
+  </header>
+
+  <aside class="side">
+    <div class="side-in">
+      <nav class="nav" aria-label="Secciones">
+        <a href="#resumen" data-ic="grid" aria-current="true"><span>Dashboard</span></a>
+        <a href="#matriz" data-ic="matrix"><span>Matriz</span></a>
+        <a href="#ranking" data-ic="trophy"><span>Ranking</span></a>
+        <a href="#analisis" data-ic="chart"><span>Análisis</span></a>
+        <a href="#ideas" data-ic="list"><span>Ideas</span></a>
+      </nav>
+      <button class="icon-btn" id="theme" type="button" aria-label="Cambiar entre tema claro y oscuro"></button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="resumen"><div class="tiles" id="tiles"></div></div>
+
+    <div class="row2">
+      <section class="card" id="matriz" aria-labelledby="mx-h">
+        <div class="ch"><h2 id="mx-h">Matriz impacto vs esfuerzo</h2><span class="sub">Cada burbuja agrupa ideas con los mismos puntos. Toca una para verla.</span></div>
+        <div class="chart" id="matrix"></div>
+        <div class="strip" id="strip"></div>
+      </section>
+      <div class="stack">
+        <section class="card" aria-labelledby="dn-h">
+          <div class="ch"><h2 id="dn-h">Clasificación de ideas</h2></div>
+          <div class="dn" id="donut"></div>
+        </section>
+        <section class="card" aria-labelledby="pl-h">
+          <div class="ch"><h2 id="pl-h">Ideas por pilar principal</h2></div>
+          <div class="pils" id="pils"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="card" id="condiciones" aria-labelledby="cd-h">
+      <div class="ch"><h2 id="cd-h">Condiciones de implementación</h2></div>
+      <div class="rings" id="rings"></div>
+    </section>
+
+    <div class="row2" id="ranking">
+      <section class="card" aria-labelledby="rk-h">
+        <div class="ch"><h2 id="rk-h">Top 10 ideas (ranking)</h2><span class="sub">Puntaje = Impacto − Esfuerzo</span></div>
+        <div class="tw" id="rank"></div>
+      </section>
+      <div class="stack">
+        <section class="card" aria-labelledby="sc-h">
+          <div class="ch"><h2 id="sc-h">Resumen de puntajes</h2></div>
+          <div class="sc2" id="score"></div>
+        </section>
+        <section class="card how" aria-labelledby="how-h">
+          <div class="ch"><h2 id="how-h">Cómo se calcula</h2></div>
+          <p id="howp">Impacto = frecuencia + alcance + ámbito. Esfuerzo = inversión + dificultad + dependencia. Puntaje = impacto − esfuerzo. Con impacto 8 o más y esfuerzo 5 o menos, la idea es un Quick Win.</p>
+        </section>
+      </div>
+    </div>
+
+    <div class="rowe" id="analisis">
+      <section class="card" aria-labelledby="dist-h">
+        <div class="ch"><h2 id="dist-h">Respuestas por pregunta</h2><span class="sub">Con los puntos que suma cada respuesta</span></div>
+        <div class="tabs" id="disttabs" role="group" aria-label="Pregunta"></div>
+        <div id="distbars"></div>
+      </section>
+      <section class="card" aria-labelledby="act-h">
+        <div class="ch"><h2 id="act-h">Ideas recibidas por semana</h2><span class="sub" id="act-s"></span></div>
+        <div class="chart" id="activity"></div>
+      </section>
+    </div>
+
+    <div class="rowe">
+      <section class="card" aria-labelledby="go-h">
+        <div class="ch"><h2 id="go-h">Para empezar ya</h2><span class="sub">Quick Wins con más puntaje</span></div>
+        <div class="mini" id="go"></div>
+      </section>
+      <section class="card" aria-labelledby="ql-h">
+        <div class="ch"><h2 id="ql-h">Calidad de los datos</h2></div>
+        <div class="q" id="quality"></div>
+      </section>
+    </div>
+
+    <section class="card" id="ideas" aria-labelledby="id-h">
+      <div class="ch"><h2 id="id-h">Todas las ideas</h2>
+        <label class="search"><span data-ic="search"></span><span class="sr">Buscar en las ideas</span><input id="q" type="search" placeholder="Buscar en las ideas" autocomplete="off"></label>
+      </div>
+      <div class="sub" id="id-s" style="margin-bottom:10px"></div>
+      <div class="fnote" id="fnote" hidden></div>
+      <div class="list" id="list"></div>
+    </section>
+
+    <section class="card" id="nube" aria-labelledby="cl-h">
+      <div class="ch"><h2 id="cl-h">Nube de palabras</h2><span class="sub">Las palabras más repetidas en las ideas. Toca una para buscarla.</span></div>
+      <div class="cloud" id="cloud"></div>
+    </section>
+  </main>
+
+  <footer class="ftr">
+    <span id="src"></span><span>Transformamos ideas en mejoras reales</span><span>¡Cada idea cuenta!</span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+'use strict';
+var RAW = [{"id": 1, "t": "2026-07-24T13:11", "problema": "Los insumos de uso frecuente están distribuidos en diferentes gabinetes, lo que aumenta el tiempo de búsqueda.", "propuesta": "Reorganizar los insumos según frecuencia de uso e identificar cada espacio con etiquetas visibles.", "beneficio": "Reducir tiempos de búsqueda y mejorar la productividad.", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No", "pilar": "EFF"}, {"id": 2, "t": "2026-07-24T13:28", "problema": "Se imprimen documentos que finalmente no se utilizan.", "propuesta": "Implementar la revisión digital antes de imprimir.", "beneficio": "Disminuir el consumo de papel y tinta.", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Costos", "inversion": "No", "dificultad": 1, "dependencia": "No", "similar": "No lo sé", "pilar": "SUS"}, {"id": 3, "t": "2026-07-24T13:30", "problema": "Algunos equipos permanecen encendidos cuando no están siendo utilizados.", "propuesta": "Crear una lista de verificación para apagar equipos al finalizar la jornada.", "beneficio": "Reducir el consumo de energía y prolongar la vida útil de los equipos.", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Costos", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No", "pilar": "SUS"}, {"id": 4, "t": "2026-07-24T13:41", "problema": "Algunos equipos permanecen encendidos cuando no están siendo utilizados.", "propuesta": "Crear una lista de verificación para apagar equipos al finalizar la jornada.", "beneficio": "Reducir el consumo de energía y prolongar la vida útil de los equipos.", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Costos", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No", "pilar": "SUS"}, {"id": 5, "t": "2026-07-24T13:42", "problema": "Los residuos reciclables y ordinarios se mezclan con frecuencia.", "propuesta": "Colocar señalización más visible y recipientes claramente identificados.", "beneficio": "Mejor manejo de residuos y cumplimiento ambiental.", "frecuencia": "Varias veces por semana", "alcance": "Afecta procesos que involucran también a otras áreas", "ambito": "Calidad", "inversion": "Sí", "dificultad": 2, "dependencia": "Sí", "similar": "No lo sé", "pilar": "SUS"}, {"id": 6, "t": "2026-07-24T13:43", "problema": "Se presentan desplazamientos innecesarios para recoger materiales de uso diario.", "propuesta": "Reubicar los materiales cerca de los puestos donde más se utilizan.", "beneficio": "Disminuir tiempos de desplazamiento y fatiga.", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No", "dificultad": 3, "dependencia": "No", "similar": "No", "pilar": "EFF"}, {"id": 7, "t": "2026-07-24T13:43", "problema": "Es difícil identificar el estado de algunas muestras por falta de etiquetas claras.", "propuesta": "Estandarizar el uso de etiquetas con colores según el estado de la muestra.", "beneficio": "Disminuir errores y agilizar la identificación.", "frecuencia": "Varias veces al mes", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "Sí", "dificultad": 3, "dependencia": "Sí", "similar": "No lo sé", "pilar": "QUA"}, {"id": 8, "t": "2026-07-24T13:44", "problema": "No siempre se conoce el inventario disponible antes de solicitar nuevos insumos.", "propuesta": "Actualizar semanalmente un inventario compartido", "beneficio": "Evitar compras innecesarias y faltantes de material", "frecuencia": "Varias veces al mes", "alcance": "Afecta procesos que involucran también a otras áreas", "ambito": "Eficiencia", "inversion": "No", "dificultad": 3, "dependencia": "Sí", "similar": "Sí", "pilar": "EFF"}, {"id": 9, "t": "2026-07-24T13:45", "problema": "Algunas instrucciones de trabajo no están disponibles en el lugar donde se ejecutan las actividades", "propuesta": "Colocar códigos QR con acceso a los procedimientos actualizados", "beneficio": "Facilitar la consulta y reducir errores.", "frecuencia": "Ocasionalmente", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "Sí", "dificultad": 4, "dependencia": "Sí", "similar": "No", "pilar": "QUA"}, {"id": 10, "t": "2026-07-24T13:45", "problema": "Los elementos de protección personal no siempre están disponibles en el punto de uso.", "propuesta": "nstalar estaciones de EPP en las áreas de mayor utilización", "beneficio": "Incrementar el cumplimiento del uso de elementos de protección.", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Seguridad", "inversion": "Sí", "dificultad": 3, "dependencia": "Sí", "similar": "No", "pilar": "SHE"}, {"id": 11, "t": "2026-07-24T13:46", "problema": "Se invierte tiempo respondiendo preguntas repetitivas sobre procesos internos.", "propuesta": "Crear una guía rápida con las preguntas más frecuentes y su procedimiento.", "beneficio": "Ahorrar tiempo y unificar la información entregada.", "frecuencia": "Varias veces por semana", "alcance": "Afecta principalmente una actividad o puesto de trabajo", "ambito": "Tiempo", "inversion": "No", "dificultad": 1, "dependencia": "No", "similar": "No", "pilar": "EFF"}, {"id": 12, "t": "2026-07-24T13:48", "problema": "Actualización de puestos y Dory desalineada", "propuesta": "Calendario trimestral de actualización", "beneficio": "Mayor control documental", "frecuencia": "Varias veces al mes", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "No", "dificultad": 3, "dependencia": "No", "similar": "No", "pilar": "QUA"}, {"id": 13, "t": "2026-07-24T13:50", "problema": "Problemas de solubilidad", "propuesta": "Base de datos de manejo especial", "beneficio": "Menos reprocesos", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "No", "dificultad": 4, "dependencia": "Sí", "similar": "No", "pilar": "QUA"}, {"id": 14, "t": "2026-07-24T13:50", "problema": "No hay fichas técnicas rápidas", "propuesta": "Macro para generar fichas", "beneficio": "Consulta rápida", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Eficiencia", "inversion": "No", "dificultad": 4, "dependencia": "No", "similar": "Sí", "pilar": "EFF"}, {"id": 15, "t": "2026-07-24T13:51", "problema": "Bajo conocimiento de un procedimiento", "propuesta": "Capacitación", "beneficio": "Estandarización de conocimiento", "frecuencia": "Varias veces al mes", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "Sí", "pilar": "QUA"}, {"id": 16, "t": "2026-07-24T13:53", "problema": "Las ideas se pierden", "propuesta": "Forms + matriz impacto/esfuerzo", "beneficio": "Innovación y gestión de ideas", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Eficiencia", "inversion": "No", "dificultad": 3, "dependencia": "No", "similar": "No", "pilar": "EFF"}, {"id": 17, "t": "2026-07-24T13:53", "problema": "Variabilidad en homogenización", "propuesta": "Guía de mejores prácticas", "beneficio": "Consistencia en el proceso de pesaje", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "No", "dificultad": 4, "dependencia": "Sí", "similar": "No", "pilar": "QUA"}, {"id": 18, "t": "2026-07-24T13:58", "problema": "Falta conocimiento sobre polaridad y solubilidad de MP", "propuesta": "Capacitaciones TD", "beneficio": "Mejor criterio técnico", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "No", "dificultad": 3, "dependencia": "Sí", "similar": "No", "pilar": "QUA"}, {"id": 19, "t": "2026-07-24T13:59", "problema": "Carpetas desorganizadas", "propuesta": "Depuración documental", "beneficio": "Búsqueda rápida", "frecuencia": "Ocasionalmente", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No lo sé", "pilar": "EFF"}, {"id": 20, "t": "2026-07-24T14:00", "problema": "Lecciones aprendidas no documentadas", "propuesta": "", "beneficio": "Transferencia de conocimiento", "frecuencia": "Varias veces al mes", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "No", "dificultad": 3, "dependencia": "No", "similar": "No", "pilar": "QUA"}, {"id": 21, "t": "2026-07-24T14:13", "problema": "El mueble de bases se desorganiza mucho", "propuesta": "Tener un mueble mas para bases", "beneficio": "Menor tiempo de busqueda", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No estoy seguro", "dificultad": 3, "dependencia": "No", "similar": "No", "pilar": "EFF"}, {"id": 22, "t": "2026-07-24T15:36", "problema": "Materias primas desorganizadas dentro del stock", "propuesta": "Renombrar todas las materias primas con una codificación más sencilla", "beneficio": "Manejar códigos de hasta 3 digitos y no de 6 digitos", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No estoy seguro", "dificultad": 3, "dependencia": "No", "similar": "Sí", "pilar": "EFF"}, {"id": 23, "t": "2026-07-28T12:27", "problema": "Hay tapas de baja calidad que no se cambian.", "propuesta": "Jornada de cambio de tapas", "beneficio": "Que no se caigan los frascos por las tapas de baja calida", "frecuencia": "Varias veces por semana", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Seguridad", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No", "pilar": "SHE"}, {"id": 24, "t": "2026-08-31T10:56", "problema": "Stock de materias primas desorganizado y sin espacio para poner materias primas o bases", "propuesta": "Reorganizar el stock de una manera mas amigable para la persona que alista", "beneficio": "Ser mas eficientes a la hora de alistar", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No estoy seguro", "dificultad": 3, "dependencia": "No", "similar": "No", "pilar": "EFF"}, {"id": 25, "t": "2026-08-31T11:02", "problema": "xxxxxxx", "propuesta": "", "beneficio": "", "frecuencia": "Varias veces al mes", "alcance": "Afecta principalmente una actividad o puesto de trabajo", "ambito": "Seguridad", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No lo sé", "pilar": "UC"}, {"id": 26, "t": "2026-08-31T11:21", "problema": "mmmmmmmmmm", "propuesta": "mmmmmmmmmmm", "beneficio": "mmmmmm", "frecuencia": "Varias veces al mes", "alcance": "Afecta procesos que involucran también a otras áreas", "ambito": "Ergonomía", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No", "pilar": "SHE"}, {"id": 27, "t": "2026-08-31T13:31", "problema": "Sobrecarga mueble de Kilo", "propuesta": "Distribucion de materias primas con el mueble vacio en stock", "beneficio": "Mayor organizaciòn y menor esfuerzo fisico al manejar este mueble", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No lo sé", "pilar": "EFF"}, {"id": 28, "t": "2026-08-31T13:39", "problema": "Falta de control tabla de aceites terminados", "propuesta": "Automatizar el proceso para llenar la tabla", "beneficio": "Facilidad y mejora del control en la tabla", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No", "dificultad": 4, "dependencia": "No", "similar": "No lo sé", "pilar": "EFF"}, {"id": 29, "t": "2026-08-31T13:51", "problema": "Accidentes por tapas inestables en las materias primas", "propuesta": "cambio de tapas a unas mas seguras", "beneficio": "Mayor seguridad en la manipulacion de materias primas", "frecuencia": "Varias veces al mes", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "Sí", "dificultad": 2, "dependencia": "No", "similar": "Sí", "pilar": "QUA"}, {"id": 30, "t": "2026-08-31T14:15", "problema": "perdida de materia prima por frascos \"innadecuados\"", "propuesta": "evaluar el volver a frascos anteriormente usados donde se evita tanta perdida de materia prima", "beneficio": "", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "Sí", "dificultad": 3, "dependencia": "Sí", "similar": "No lo sé", "pilar": "UC"}, {"id": 31, "t": "2026-09-02T15:36", "problema": "riesgo de posibles accidentes dentro del laboratorio debido a tapas inseguras en mp", "propuesta": "regeneracion en las tapas inseguras por tapas nuevas", "beneficio": "una gestion mas segura de las mp", "frecuencia": "Varias veces al mes", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Seguridad", "inversion": "Sí", "dificultad": 2, "dependencia": "No", "similar": "No lo sé", "pilar": "SHE"}, {"id": 32, "t": "2026-09-02T15:45", "problema": "falta de conocimiento de un procedimiento", "propuesta": "refuerzo con capacitaciones", "beneficio": "mejor manejo en los procedimientos requeridos", "frecuencia": "Varias veces al mes", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "Sí", "pilar": "QUA"}, {"id": 33, "t": "2026-09-02T15:54", "problema": "sobrecarga mueble de kilo", "propuesta": "distribucion de las mp en el mueble disponible", "beneficio": "Mayor organizaciòn y menor esfuerzo fisico al manejar este mueble", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Tiempo", "inversion": "No", "dificultad": 2, "dependencia": "No", "similar": "No lo sé", "pilar": "EFF"}, {"id": 34, "t": "2026-09-02T16:02", "problema": "perdida de materia prima por frascos \"innadecuados\"", "propuesta": "evaluar el volver a frascos anteriormente usados donde se evita tanta perdida de materia prima", "beneficio": "", "frecuencia": "Todos los días", "alcance": "Afecta a varias personas o actividades dentro del laboratorio", "ambito": "Calidad", "inversion": "Sí", "dificultad": 3, "dependencia": "Sí", "similar": "No lo sé", "pilar": "SUS"}];
+var T={"rtog": false, "pillars": {"EFF": "Eficiencia", "QUA": "Calidad", "SHE": "SHE", "SUS": "Sostenibilidad", "UC": "Colaboración incondicional"}, "dec": ",", "months": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], "idea": ["idea", "ideas"], "shares": ["idea comparte", "ideas comparten"], "loaded": ["idea cargada", "ideas cargadas"], "point": ["punto", "puntos"], "all": "Todas", "total": "Total de ideas", "pct_total": "% del total", "ideas_word": "ideas", "source": "Fuente: ", "cls": {"QW": {"name": "Quick Wins", "one": "Quick Win", "short": "Quick Wins"}, "PL": {"name": "Proyectos Lean", "one": "Proyecto Lean", "short": "Proyectos Lean"}, "MO": {"name": "Mejoras operativas", "one": "Mejora operativa", "short": "Mejoras operativas"}, "BI": {"name": "Banco de ideas", "one": "Banco de ideas", "short": "Banco de ideas"}}, "impact": "Impacto", "effort": "Esfuerzo", "score": "Puntaje", "ax_x": "Esfuerzo (puntos)", "ax_y": "Impacto (puntos)", "mx_h": "Matriz impacto vs esfuerzo", "no_date": "Los datos no traen fecha de envío.", "act_aria": "Ideas recibidas por semana. Pico de {n} en la semana del {d}.", "peak": "Pico: ", "week_of": " · semana del ", "no_ideas_show": "No hay ideas para mostrar.", "shares_tail": " esta combinación ({p}% del total). Toca otra burbuja para verla.", "no_desc": "(sin descripción)", "filter_list": "Filtrar la lista", "level": "Nivel", "no_data": "Sin datos.", "vars": {"ambito": "Ámbito", "frecuencia": "Frecuencia", "alcance": "Alcance", "inversion": "Inversión", "dificultad": "Dificultad", "dependencia": "Dependencia"}, "donut_aria": "Distribución de {n} por clasificación", "of": " de ", "ring_inv": "Inversión", "ring_dep": "Depende de otra área", "ring_sim": "Solución similar", "th_idea": "Idea", "th_area": "Ámbito", "th_class": "Clasificación", "avg_imp": "Impacto promedio", "avg_esf": "Esfuerzo promedio", "avg_score": "Puntaje promedio", "top_combo": "Combinación más común", "range": "Rango", "go_empty": "Todavía no hay Quick Wins.", "none": "Ninguna", "q_inc": "Sin propuesta o sin beneficio", "q_dup": "Posibles repetidas (mismo problema)", "q_junk": "Entradas de prueba ignoradas (xxxx, mmmm)", "showing": "Mostrando {a} de {b} · ordenadas por puntaje", "mx_filter": "Filtro de la matriz: ", "clear": "Quitar", "no_match": "No hay ideas con ese filtro.", "f_prop": "Propuesta", "f_change": "Qué cambiaría", "f_freq": "Frecuencia", "f_scope": "Alcance", "f_inv": "Inversión", "f_diff": "Dificultad", "of5": " de 5", "f_dep": "Depende de otra área", "f_sim": "Solución similar", "f_sent": "Enviada", "no_answer": "Sin respuesta", "err_sheet": "No encontré la hoja de respuestas del Forms (la que tiene la pregunta \"¿Qué problema observaste?\").", "err_cols": "Faltan columnas en el Excel: ", "err_empty": "El Excel no tiene ideas registradas.", "cloud_h": "Nube de palabras", "err_reader": "No se pudo cargar el lector de Excel. Revisa tu conexión y recarga.", "reading": "Leyendo ", "done": "Listo: ", "err_read": "No pude leer el archivo.", "back": "Volviste al Excel original.", "tr": {}};
+var TRANS={};
+var SRC0 = 'LIMS - LEAN IDEA MANAGEMENT SYSTEM COPY.xlsx';
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function norm(s){return String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim()}
+function TX(s){return T.tr[s]||s}
+function RT(s){s=String(s==null?'':s);if(S.rl!=='en')return s;var k=norm(s);return TRANS[k]||s}
+function cap(s){s=String(s||'').trim();return s?s.charAt(0).toUpperCase()+s.slice(1):''}
+function plu(n,p){return n+' '+(n===1?p[0]:p[1])}
+function fmt(s,o){return s.replace(/\{(\w+)\}/g,function(m,k){return o[k]})}
+function dec(x,n){return x.toFixed(n==null?1:n).replace('.',T.dec)}
+function sgn(v){return v<0?'−'+(-v):String(v)}
+function fd(d,y){return d.getUTCDate()+' '+T.months[d.getUTCMonth()]+(y?' '+d.getUTCFullYear():'')}
+
+var IC={
+ grid:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+ matrix:'M4 20V4M4 20h16M8 16l3-4 3 2 4-6',
+ list:'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
+ trophy:'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3',
+ chart:'M4 20V10M10 20V4M16 20v-7M22 20H2',
+ upload:'M12 16V4M7 9l5-5 5 5M4 20h16',
+ calendar:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M8 14h2M12 14h2M16 14h.01',
+ sun:'M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+ moon:'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z',
+ search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5',
+ gear:'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8',
+ shield:'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6zM9 12l2 2 4-4',
+ she:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8',
+ leaf:'M5 19c0-8 5-14 15-14 0 10-6 15-14 15M5 19c3-5 6-8 10-10',
+ people:'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 11a2.5 2.5 0 1 0 0-5M17 14c2.4.5 4 2.6 4 5',
+ bulb:'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z'
+};
+function icon(n){return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+IC[n]+'"/></svg>'}
+$$('[data-ic]').forEach(function(el){el.insertAdjacentHTML('afterbegin',icon(el.getAttribute('data-ic')))});
+
+/* Scoring rules (same as the Evaluación sheet) */
+var FRE={'todos los dias':4,'varias veces por semana':3,'varias veces al mes':2,'ocasionalmente':1};
+var M0={hi:8,sp:5.5,xa:3,xb:11,ya:3,yb:10,nw:0,he:0},M=Object.assign({},M0);
+var MEJ={seguridad:3,calidad:3,ambiental:3,eficiencia:2,tiempo:2,costos:2,ergonomia:1,servicio:1};
+var INV={'no':1,'no estoy seguro':2,'si':3};
+var DEP={'no':1,'no lo se':2,'si':3};
+function pFre(v){return FRE[norm(v)]||0}
+function pAlc(v){v=norm(v);return v.indexOf('afecta principalmente')===0?1:v.indexOf('afecta a varias')===0?2:v.indexOf('afecta procesos')===0?3:0}
+var CSS={QW:'c-qw',PL:'c-pl',MO:'c-mo',BI:'c-bi'};
+var ORDER=['QW','PL','MO','BI'];
+function enrich(r){
+  var imp=(typeof r.imp==='number')?r.imp:((pFre(r.frecuencia)||2)+(pAlc(r.alcance)||2)+(MEJ[norm(r.ambito)]||2));
+  var esf=(typeof r.esf==='number')?r.esf:((INV[norm(r.inversion)]||1)+(+r.dificultad||0)+(DEP[norm(r.dependencia)]||1));
+  var cls=imp>=M.hi?(esf<M.sp?'QW':'PL'):(esf<M.sp?'MO':'BI');
+  var d=r.t?new Date(r.t+'Z'):null;
+  return Object.assign({},r,{imp:imp,esf:esf,cls:cls,sc:imp-esf,d:(d&&!isNaN(d))?d:null});
+}
+
+var S={junk:[],rl:'en',all:[],aset:[],ideas:[],label:SRC0,custom:false,cls:'ALL',area:'ALL',q:'',cell:null,sel:null,tab:'ambito',open:null};
+function counts(){var c={QW:0,PL:0,MO:0,BI:0};S.aset.forEach(function(i){c[i.cls]++});return c}
+function ckey(i){return i.imp+'-'+i.esf}
+function prio(a,b){return b.sc-a.sc||b.imp-a.imp||a.id-b.id}
+function avg(a){return a.length?a.reduce(function(s,v){return s+v},0)/a.length:0}
+
+function recompute(){
+  S.aset=S.all.filter(function(i){return S.area==='ALL'||i.ambito===S.area});
+  S.ideas=S.aset.filter(function(i){return S.cls==='ALL'||i.cls===S.cls});
+}
+function renderFilters(){
+  var c=$('#fcls'),a=$('#farea');
+  c.innerHTML='<option value="ALL">'+esc(T.all)+'</option>'+ORDER.map(function(k){return '<option value="'+k+'">'+esc(T.cls[k].name)+'</option>'}).join('');
+  var cnt={};S.all.forEach(function(i){if(i.ambito)cnt[i.ambito]=(cnt[i.ambito]||0)+1});
+  var keys=Object.keys(cnt).sort(function(x,y){return cnt[y]-cnt[x]||x.localeCompare(y)});
+  a.innerHTML='<option value="ALL">'+esc(T.all)+'</option>'+keys.map(function(k){return '<option value="'+esc(k)+'">'+esc(TX(cap(k)))+' ('+cnt[k]+')</option>'}).join('');
+  c.value=S.cls;a.value=S.area;
+}
+function isJunk(r){var s=String(r.problema||'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');return s.length>0&&(new Set(s.split(''))).size<=2}
+function setData(rows,label,custom){
+  var ok=[],bad=[];rows.forEach(function(r){(isJunk(r)?bad:ok).push(r)});
+  S.junk=bad.map(function(r){return r.id});
+  S.all=ok.map(enrich);S.label=label;S.custom=custom;
+  S.cls='ALL';S.area='ALL';S.cell=null;S.sel=null;S.open=null;
+  renderFilters();recompute();renderAll();
+  var hp=$('#howp');if(hp){if(!hp._o)hp._o=hp.textContent;hp.textContent=M.nw?'Impacto = frecuencia + alcance + categorías (máx. 4). Esfuerzo = inversión + complejidad + dependencia + tiempo. Con impacto de '+M.hi+' o más y esfuerzo menor a '+M.he+', la idea es un Quick Win.':hp._o}
+}
+
+/* ---------- Renders ---------- */
+function renderHead(){
+  var last=S.all.filter(function(i){return i.d}).sort(function(a,b){return b.d-a.d})[0];
+  $('#last').textContent=last?fd(last.d,true):'–';
+  $('#src').textContent=T.source+S.label;
+  $('#reset').hidden=!S.custom;
+}
+function renderTiles(){
+  var n=S.aset.length,c=counts();
+  var items=[{k:'ALL',name:T.total,v:n,css:'c-all'}].concat(ORDER.map(function(k){return {k:k,name:T.cls[k].name,v:c[k],css:CSS[k]}}));
+  $('#tiles').innerHTML=items.map(function(it){
+    var p=n?Math.round(it.v/n*100):0;
+    var svg=it.k==='ALL'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+IC.bulb+'"/></svg>':'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="12" width="4.5" height="9" rx="2"/><rect x="9.75" y="5" width="4.5" height="16" rx="2"/><rect x="16.5" y="9" width="4.5" height="12" rx="2"/></svg>';
+    return '<button type="button" class="tile '+it.css+'" data-f="'+it.k+'" aria-pressed="'+(S.cls===it.k)+'" aria-label="'+esc(it.name)+': '+it.v+'">'+
+      '<span class="ib">'+svg+'</span><span><span class="tn">'+esc(it.name)+'</span><strong>'+it.v+'</strong><em>'+p+T.pct_total+'</em></span></button>';
+  }).join('');
+}
+
+function weekly(){
+  var ds=S.ideas.filter(function(i){return i.d}).map(function(i){return i.d.getTime()});
+  if(!ds.length)return [];
+  var W=7*864e5;
+  function ws(t){var d=new Date(t),day=(d.getUTCDay()+6)%7;return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())-day*864e5}
+  var a=ws(Math.min.apply(null,ds)),b=ws(Math.max.apply(null,ds)),out=[];
+  for(var t=a;t<=b;t+=W)out.push({t:t,n:0});
+  ds.forEach(function(t){out[Math.round((ws(t)-a)/W)].n++});
+  return out;
+}
+function mono(p){
+  var n=p.length;if(n<2)return '';
+  var dx=[],m=[],t=[],i;
+  for(i=0;i<n-1;i++){dx.push(p[i+1][0]-p[i][0]);m.push((p[i+1][1]-p[i][1])/dx[i])}
+  t.push(m[0]);
+  for(i=1;i<n-1;i++)t.push(m[i-1]*m[i]<=0?0:(m[i-1]+m[i])/2);
+  t.push(m[n-2]);
+  for(i=0;i<n-1;i++){
+    if(m[i]===0){t[i]=0;t[i+1]=0}
+    else{var a=t[i]/m[i],b=t[i+1]/m[i],s=a*a+b*b;if(s>9){var k=3/Math.sqrt(s);t[i]=k*a*m[i];t[i+1]=k*b*m[i]}}
+  }
+  var d='M'+p[0][0].toFixed(1)+' '+p[0][1].toFixed(1);
+  for(i=0;i<n-1;i++){
+    d+=' C'+(p[i][0]+dx[i]/3).toFixed(1)+' '+(p[i][1]+t[i]*dx[i]/3).toFixed(1)+' '+(p[i+1][0]-dx[i]/3).toFixed(1)+' '+(p[i+1][1]-t[i+1]*dx[i]/3).toFixed(1)+' '+p[i+1][0].toFixed(1)+' '+p[i+1][1].toFixed(1);
+  }
+  return d;
+}
+function renderActivity(){
+  var el=$('#activity'),wk=weekly();
+  if(!wk.length){el.innerHTML='<p class="empty">'+esc(T.no_date)+'</p>';$('#act-s').textContent='';return}
+  var W=Math.max(260,el.clientWidth),H=220;
+  var mx=Math.max.apply(null,wk.map(function(x){return x.n}));mx=Math.max(mx,1);
+  var step=[1,2,5,10,20,25,50,100,200,500].filter(function(s){return mx/s<=4})[0]||1000,top=Math.ceil(mx/step)*step;
+  var m={l:34,r:16,t:40,b:28},pw=W-m.l-m.r,ph=H-m.t-m.b;
+  function X(i){return m.l+(wk.length>1?i*pw/(wk.length-1):pw/2)}
+  function Y(v){return m.t+ph-(v/top)*ph}
+  var pts=wk.map(function(w,i){return [X(i),Y(w.n)]});
+  var pk=0;wk.forEach(function(w,i){if(w.n>wk[pk].n)pk=i});
+  var g='';
+  for(var v=0;v<=top;v+=step)g+='<line class="gl" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text class="ax" x="'+(m.l-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+v+'</text>';
+  var line=mono(pts),base=m.t+ph;
+  var area=line?line+' L'+X(wk.length-1)+' '+base+' L'+X(0)+' '+base+' Z':'';
+  var gap=wk.length>1?pw/(wk.length-1):pw,k=Math.max(1,Math.ceil(54/gap)),xl='';
+  wk.forEach(function(w,i){if(i%k===0||i===wk.length-1&&k===1)xl+='<text class="ax" x="'+X(i)+'" y="'+(H-8)+'" text-anchor="middle">'+fd(new Date(w.t))+'</text>'});
+  var dots=wk.map(function(w,i){
+    return '<circle cx="'+X(i)+'" cy="'+Y(w.n)+'" r="'+(i===pk?7:4)+'" fill="var(--card)" stroke="'+(i===pk?'var(--acc-b)':'var(--acc-a)')+'" stroke-width="'+(i===pk?3.5:2.5)+'"><title>'+plu(w.n,T.idea)+T.week_of+fd(new Date(w.t))+'</title></circle>';
+  }).join('');
+  var tw=84,tx=Math.min(Math.max(pts[pk][0]-tw/2,2),W-tw-2),ty=Math.max(pts[pk][1]-36,2);
+  var tag='<g><rect x="'+tx+'" y="'+ty+'" width="'+tw+'" height="22" rx="7" fill="var(--card)" stroke="var(--acc-a)" stroke-width="1.5"/><text class="tag-t" x="'+(tx+tw/2)+'" y="'+(ty+15)+'" text-anchor="middle">'+plu(wk[pk].n,T.idea)+'</text></g>';
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(fmt(T.act_aria,{n:plu(wk[pk].n,T.idea),d:fd(new Date(wk[pk].t))}))+'"><defs><linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--acc-a);stop-opacity:.35"/><stop offset="1" style="stop-color:var(--acc-a);stop-opacity:0"/></linearGradient></defs>'+g+(area?'<path d="'+area+'" fill="url(#gArea)"/>':'')+(line?'<path class="area-line" d="'+line+'"/>':'')+xl+dots+tag+'</svg>';
+  $('#act-s').textContent=T.peak+plu(wk[pk].n,T.idea)+T.week_of+fd(new Date(wk[pk].t));
+}
+
+function cells(){
+  var m={};
+  S.ideas.forEach(function(i){var k=ckey(i);(m[k]=m[k]||{imp:i.imp,esf:i.esf,cls:i.cls,items:[]}).items.push(i)});
+  return Object.keys(m).map(function(k){return m[k]});
+}
+function renderMatrix(){
+  var el=$('#matrix'),cs=cells();
+  var W=Math.max(280,el.clientWidth),H=Math.round(Math.min(430,Math.max(300,W*0.52)));
+  var m={l:46,r:12,t:12,b:42},pw=W-m.l-m.r,ph=H-m.t-m.b;
+  var X0=M.xa-.5,X1=M.xb+.5,Y0=M.ya-.5,Y1=M.yb+.5;
+  function sx(v){return m.l+(v-X0)/(X1-X0)*pw}
+  function sy(v){return m.t+(1-(v-Y0)/(Y1-Y0))*ph}
+  var cx=sx(M.sp),cy=sy(M.hi-.5);
+  var s='<rect class="q-qw" x="'+sx(X0)+'" y="'+sy(Y1)+'" width="'+(cx-sx(X0))+'" height="'+(cy-sy(Y1))+'"/>'+
+        '<rect class="q-pl" x="'+cx+'" y="'+sy(Y1)+'" width="'+(sx(X1)-cx)+'" height="'+(cy-sy(Y1))+'"/>'+
+        '<rect class="q-mo" x="'+sx(X0)+'" y="'+cy+'" width="'+(cx-sx(X0))+'" height="'+(sy(Y0)-cy)+'"/>'+
+        '<rect class="q-bi" x="'+cx+'" y="'+cy+'" width="'+(sx(X1)-cx)+'" height="'+(sy(Y0)-cy)+'"/>';
+  var v;
+  for(v=M.xa;v<=M.xb;v++)s+='<line class="gl" x1="'+sx(v)+'" x2="'+sx(v)+'" y1="'+sy(Y1)+'" y2="'+sy(Y0)+'"/><text class="ax" x="'+sx(v)+'" y="'+(sy(Y0)+16)+'" text-anchor="middle">'+v+'</text>';
+  for(v=M.ya;v<=M.yb;v++)s+='<line class="gl" x1="'+sx(X0)+'" x2="'+sx(X1)+'" y1="'+sy(v)+'" y2="'+sy(v)+'"/><text class="ax" x="'+(m.l-8)+'" y="'+(sy(v)+4)+'" text-anchor="end">'+v+'</text>';
+  s+='<line class="qd" x1="'+cx+'" x2="'+cx+'" y1="'+sy(Y1)+'" y2="'+sy(Y0)+'"/><line class="qd" x1="'+sx(X0)+'" x2="'+sx(X1)+'" y1="'+cy+'" y2="'+cy+'"/>';
+  s+='<text class="ql" style="fill:var(--qw-ink)" x="'+(sx(X0)+8)+'" y="'+(sy(Y1)+16)+'">'+esc(T.cls.QW.short)+'</text>'+
+     '<text class="ql" style="fill:var(--pl-ink)" x="'+(sx(X1)-8)+'" y="'+(sy(Y1)+16)+'" text-anchor="end">'+esc(T.cls.PL.short)+'</text>'+
+     '<text class="ql" style="fill:var(--mo-ink)" x="'+(sx(X0)+8)+'" y="'+(sy(Y0)-8)+'">'+esc(T.cls.MO.short)+'</text>'+
+     '<text class="ql" style="fill:var(--bi-ink)" x="'+(sx(X1)-8)+'" y="'+(sy(Y0)-8)+'" text-anchor="end">'+esc(T.cls.BI.short)+'</text>';
+  s+='<text class="axs" x="'+(m.l+pw/2)+'" y="'+(H-4)+'" text-anchor="middle">'+esc(T.ax_x)+'</text>'+
+     '<text class="axs" transform="translate(12 '+(m.t+ph/2)+') rotate(-90)" text-anchor="middle">'+esc(T.ax_y)+'</text>';
+  var mxN=Math.max.apply(null,cs.map(function(c){return c.items.length}).concat([1]));
+  var stepX=pw/(X1-X0),stepY=ph/(Y1-Y0),rmax=Math.min(stepX,stepY)*0.46,rmin=Math.max(6,rmax*0.42);
+  cs.slice().sort(function(a,b){return b.items.length-a.items.length}).forEach(function(c){
+    var n=c.items.length,r=mxN>1?rmin+(rmax-rmin)*Math.sqrt((n-1)/(mxN-1)):(rmin+rmax)/2;
+    var isSel=S.sel&&S.sel.imp===c.imp&&S.sel.esf===c.esf,x=sx(c.esf),y=sy(c.imp);
+    var lab=T.impact+' '+c.imp+' · '+T.effort+' '+c.esf+': '+plu(n,T.idea);
+    s+='<g class="bub '+CSS[c.cls]+'" tabindex="0" role="button" data-i="'+c.imp+'" data-e="'+c.esf+'" aria-label="'+esc(lab)+'">'+
+       '<circle class="b" cx="'+x+'" cy="'+y+'" r="'+r.toFixed(1)+'" fill-opacity=".92"/>'+
+       (isSel?'<circle class="sel" cx="'+x+'" cy="'+y+'" r="'+(r+4).toFixed(1)+'"/>':'')+
+       (r>=9?'<text x="'+x+'" y="'+(y+4)+'">'+n+'</text>':'')+'<title>'+esc(lab)+'</title></g>';
+  });
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="group" aria-label="'+esc(T.mx_h)+'">'+s+'</svg>';
+}
+function renderStrip(){
+  var el=$('#strip'),cs=cells();
+  if(!cs.length){el.innerHTML='<p>'+esc(T.no_ideas_show)+'</p>';return}
+  if(!S.sel||!cs.some(function(c){return c.imp===S.sel.imp&&c.esf===S.sel.esf})){
+    var b=cs.slice().sort(function(a,b){return b.items.length-a.items.length||b.imp-a.imp})[0];S.sel={imp:b.imp,esf:b.esf};
+  }
+  var c=cs.filter(function(c){return c.imp===S.sel.imp&&c.esf===S.sel.esf})[0],n=c.items.length,t=S.ideas.length;
+  el.innerHTML='<div class="strip-h"><b>'+esc(T.impact)+' '+c.imp+' · '+esc(T.effort)+' '+c.esf+'</b><span class="pill '+CSS[c.cls]+'">'+esc(T.cls[c.cls].one)+'</span></div>'+
+    '<p>'+esc(plu(n,T.shares)+fmt(T.shares_tail,{p:Math.round(n/t*100)}))+'</p>'+
+    '<ul>'+c.items.sort(prio).map(function(i){return '<li><span>#'+i.id+'</span><div>'+esc(RT(i.problema)||T.no_desc)+'</div></li>'}).join('')+'</ul>'+
+    '<div><button type="button" class="btn solid sm" id="cellgo">'+esc(T.filter_list)+'</button></div>';
+}
+
+function yn(v){var n=norm(v);return n==='si'?'Sí':n==='no'?'No':n==='no estoy seguro'?'No estoy seguro':n==='no lo se'?'No lo sé':(String(v||'').trim()||'Sin respuesta')}
+var ALC=['Una actividad o puesto','Varias personas o actividades','Procesos de otras áreas'];
+var FRE_L=['Todos los días','Varias veces por semana','Varias veces al mes','Ocasionalmente'];
+var VARS=[
+ {k:'ambito',key:function(i){return cap(i.ambito)||'Sin respuesta'},pts:function(l){return MEJ[norm(l)]},order:null},
+ {k:'frecuencia',key:function(i){var p=pFre(i.frecuencia);return p?FRE_L[4-p]:(String(i.frecuencia||'').trim()||'Sin respuesta')},pts:function(l){return FRE[norm(l)]},order:FRE_L},
+ {k:'alcance',key:function(i){var p=pAlc(i.alcance);return p?ALC[p-1]:(String(i.alcance||'').trim()||'Sin respuesta')},pts:function(l){return ALC.indexOf(l)+1||undefined},order:ALC},
+ {k:'inversion',key:function(i){return yn(i.inversion)},pts:function(l){return INV[norm(l)]},order:['No','No estoy seguro','Sí']},
+ {k:'dificultad',key:function(i){return i.dificultad?String(i.dificultad):'Sin respuesta'},pts:function(l){return +l||undefined},order:['1','2','3','4','5']},
+ {k:'dependencia',key:function(i){return yn(i.dependencia)},pts:function(l){return DEP[norm(l)]},order:['No','Sí']}
+];
+function renderDist(){
+  var n=S.ideas.length;
+  $('#disttabs').innerHTML=VARS.map(function(v){return '<button type="button" class="tab" data-t="'+v.k+'" aria-pressed="'+(S.tab===v.k)+'">'+esc(T.vars[v.k])+'</button>'}).join('');
+  var V=VARS.filter(function(v){return v.k===S.tab})[0],cnt={};
+  S.ideas.forEach(function(i){var k=V.key(i);cnt[k]=(cnt[k]||0)+1});
+  var keys;
+  if(V.order){keys=V.order.slice();Object.keys(cnt).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k)})}
+  else keys=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]||a.localeCompare(b)});
+  var mx=Math.max.apply(null,keys.map(function(k){return cnt[k]||0}).concat([1]));
+  $('#distbars').innerHTML=n?keys.map(function(k){
+    var c=cnt[k]||0,p=V.pts(k),lab=V.k==='dificultad'&&/^\d$/.test(k)?T.level+' '+k:TX(k);
+    return '<div class="bar"><div class="lb">'+esc(lab)+(p?'<small>'+plu(p,T.point)+'</small>':'')+'</div><div class="trk"><div class="fill" style="width:'+(c/mx*100)+'%"></div></div><div class="vl">'+c+' <small>'+Math.round(c/n*100)+'%</small></div></div>';
+  }).join(''):'<p class="empty">'+esc(T.no_data)+'</p>';
+}
+
+function renderDonut(){
+  var n=S.aset.length,c=counts(),C=2*Math.PI*46,off=0,seg='';
+  ORDER.forEach(function(k){
+    if(!c[k])return;
+    var len=c[k]/n*C,gap=len>4?3:0,d=Math.max(len-gap,0.5);
+    seg+='<circle class="'+CSS[k]+'" style="stroke:var(--c)" cx="60" cy="60" r="46" stroke-dasharray="'+d.toFixed(2)+' '+(C-d).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 60 60)"><title>'+esc(T.cls[k].name)+': '+c[k]+'</title></circle>';
+    off+=len;
+  });
+  $('#donut').innerHTML='<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="'+esc(fmt(T.donut_aria,{n:plu(n,T.idea)}))+'"><circle cx="60" cy="60" r="46" style="stroke:var(--soft)"/>'+seg+'<text class="dc-n" x="60" y="62">'+n+'</text><text class="dc-s" x="60" y="78">'+esc(T.ideas_word)+'</text></svg>'+
+    '<div class="leg">'+ORDER.map(function(k){return '<div class="'+CSS[k]+'"><i></i><span>'+esc(T.cls[k].name)+'</span><b>'+c[k]+'</b><small>'+(n?Math.round(c[k]/n*100):0)+'%</small></div>'}).join('')+'</div>';
+}
+function ring(pct,label,cnt,n){
+  var C=2*Math.PI*24,d=pct/100*C;
+  return '<div><svg viewBox="0 0 68 68" role="img" aria-label="'+esc(label)+': '+Math.round(pct)+'%"><circle class="tr" cx="34" cy="34" r="24"/><circle cx="34" cy="34" r="24" stroke="url(#gRing)" stroke-linecap="round" stroke-dasharray="'+d.toFixed(2)+' '+(C-d).toFixed(2)+'" transform="rotate(-90 34 34)"/><text class="pc" x="34" y="38">'+Math.round(pct)+'%</text></svg><div class="rt"><b>'+esc(label)+'</b><small>'+cnt+T.of+n+'</small></div></div>';
+}
+function renderRings(){
+  var n=S.ideas.length;
+  function yes(f){return S.ideas.filter(function(i){return norm(i[f])==='si'}).length}
+  var a=yes('inversion'),b=yes('dependencia'),c=yes('similar');
+  $('#rings').innerHTML='<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--acc-a)"/><stop offset="1" style="stop-color:var(--acc-b)"/></linearGradient></defs></svg>'+
+    ring(n?a/n*100:0,T.ring_inv,a,n)+ring(n?b/n*100:0,T.ring_dep,b,n)+ring(n?c/n*100:0,T.ring_sim,c,n);
+}
+
+function renderRank(){
+  var L=S.ideas.slice().sort(prio).slice(0,10);
+  if(!L.length){$('#rank').innerHTML='<p class="empty">'+esc(T.no_data)+'</p>';return}
+  $('#rank').innerHTML='<table class="rk"><thead><tr><th>#</th><th>'+esc(T.th_idea)+'</th><th>'+esc(T.th_area)+'</th><th class="n">'+esc(T.impact)+'</th><th class="n">'+esc(T.effort)+'</th><th class="n">'+esc(T.score)+'</th><th>'+esc(T.th_class)+'</th></tr></thead><tbody>'+
+    L.map(function(i,ix){
+      return '<tr data-id="'+i.id+'" tabindex="0"><td class="pos">'+(ix+1)+'</td><td class="idea" title="'+esc(RT(i.problema))+'">'+esc(RT(i.problema)||T.no_desc)+'</td><td>'+esc(TX(cap(i.ambito))||'–')+'</td><td class="n">'+i.imp+'</td><td class="n">'+i.esf+'</td><td class="n sc">'+sgn(i.sc)+'</td><td><span class="pill '+CSS[i.cls]+'">'+esc(T.cls[i.cls].one)+'</span></td></tr>';
+    }).join('')+'</tbody></table>';
+}
+function hist(vals,lo,hi){
+  if(!vals.length)return '';
+  var n=hi-lo+1,cnt=[],i;for(i=0;i<n;i++)cnt.push(0);
+  vals.forEach(function(v){cnt[v-lo]++});
+  var mx=Math.max.apply(null,cnt),bw=100/n,s='';
+  cnt.forEach(function(c,ix){
+    var h=c?Math.max(3,c/mx*26):1;
+    s+='<rect x="'+(ix*bw+bw*.12).toFixed(2)+'" y="'+(30-h).toFixed(2)+'" width="'+(bw*.76).toFixed(2)+'" height="'+h.toFixed(2)+'" rx="1.5" fill="var(--acc-a)" opacity="'+(c?.85:.25)+'"><title>'+sgn(lo+ix)+': '+plu(c,T.idea)+'</title></rect>';
+  });
+  return '<svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">'+s+'</svg>';
+}
+function renderScore(){
+  var A=S.ideas,n=A.length;
+  if(!n){$('#score').innerHTML='<p class="empty">'+esc(T.no_data)+'</p>';return}
+  var sc=A.map(function(i){return i.sc}),lo=Math.min.apply(null,sc),hi=Math.max.apply(null,sc);
+  var best=cells().sort(function(a,b){return b.items.length-a.items.length||b.imp-a.imp})[0];
+  function tile(l,v,s,h){return '<div class="sct"><small>'+esc(l)+'</small><strong>'+v+'</strong><span>'+esc(s)+'</span>'+h+'</div>'}
+  $('#score').innerHTML=
+    tile(T.avg_imp,dec(avg(A.map(function(i){return i.imp}))),T.range+' '+M.ya+'–'+M.yb,hist(A.map(function(i){return i.imp}),M.ya,M.yb))+
+    tile(T.avg_esf,dec(avg(A.map(function(i){return i.esf}))),T.range+' '+M.xa+'–'+M.xb,hist(A.map(function(i){return i.esf}),M.xa,M.xb))+
+    tile(T.avg_score,(avg(sc)<0?'\u2212':'')+dec(Math.abs(avg(sc))),T.range+' '+sgn(lo)+' / '+sgn(hi),hist(sc,lo,hi))+
+    tile(T.top_combo,best.imp+' / '+best.esf,plu(best.items.length,T.idea)+' · '+Math.round(best.items.length/n*100)+'%','');
+}
+var PILS=['EFF','QUA','SHE','SUS','UC'],PICON={EFF:'gear',QUA:'shield',SHE:'she',SUS:'leaf',UC:'people'};
+function pillar(a){var n=norm(a);
+  if(n==='calidad')return 'QUA';
+  if(n==='seguridad'||n==='ergonomia')return 'SHE';
+  if(n==='ambiental')return 'SUS';
+  if(n==='eficiencia'||n==='tiempo'||n==='costos'||n==='servicio')return 'EFF';
+  return null}
+function renderPillars(){
+  var n=S.ideas.length,c={};PILS.forEach(function(k){c[k]=0});
+  S.ideas.forEach(function(i){var p=i.pilar||pillar(i.ambito);if(p)c[p]++});
+  var mx=Math.max.apply(null,PILS.map(function(k){return c[k]}).concat([1]));
+  $('#pils').innerHTML=PILS.map(function(k){
+    return '<div class="pil'+(c[k]?'':' zero')+'"><span class="pi">'+icon(PICON[k])+'</span><span class="pn">'+esc(T.pillars[k])+'</span><div class="trk"><div class="fill" style="width:'+(c[k]/mx*100)+'%"></div></div><span class="vl">'+c[k]+' <small>'+(n?Math.round(c[k]/n*100):0)+'%</small></span></div>';
+  }).join('');
+}
+var STOP={};('the and for with from that this are was were not but can has have had been will would should could their there they them then than into onto over under such some more most less very also only just one two out all any how its our your you who what when where which while about between during each other another these those use used using de la el en y a los las un una que se por con para del al lo es no mas su sus como sin o muy ser hay si ya le les mi tu nos cual cuando donde esta este esto estos estas son fue han tiene tienen pero sobre entre desde hasta tambien solo cada todo todos toda todas mejor menor mayor falta dentro').split(' ').forEach(function(w){STOP[w]=1});
+var cvs=document.createElement('canvas').getContext('2d');
+var CCOL=['--acc-ink','--qw-ink','--pl-ink','--mo-ink','--bi-ink'];
+function renderCloud(){
+  var el=$('#cloud'),cnt={};
+  S.ideas.forEach(function(i){
+    var txt=[RT(i.problema),RT(i.propuesta),RT(i.beneficio)].join(' ').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ');
+    txt.split(/\s+/).forEach(function(w){if(w.length>=3&&!STOP[norm(w)]&&!/^\d+$/.test(w))cnt[w]=(cnt[w]||0)+1});
+  });
+  var words=Object.keys(cnt).map(function(w){return {w:w,n:cnt[w]}}).sort(function(a,b){return b.n-a.n||a.w.localeCompare(b.w)}).slice(0,48);
+  if(!words.length){el.innerHTML='<p class="empty">'+esc(T.no_data)+'</p>';return}
+  var W=Math.max(280,el.clientWidth),H=W<500?320:380,mx=words[0].n,mn=words[words.length-1].n;
+  var smin=W<500?13:15,smax=W<500?34:52,placed=[],out='';
+  words.forEach(function(o,ix){
+    var size=mx===mn?(smin+smax)/2:smin+(smax-smin)*Math.sqrt((o.n-mn)/(mx-mn));
+    cvs.font='600 '+size+'px DM Sans, system-ui, sans-serif';
+    var w=cvs.measureText(o.w).width+8,h=size*1.2,a=0,r=0,ok=false,x=0,y=0,it=0;
+    while(it<6000&&!ok){
+      x=W/2+Math.cos(a)*r*(W/H);y=H/2+Math.sin(a)*r;
+      var L=x-w/2,R=x+w/2,T0=y-h/2,B=y+h/2;
+      ok=L>=2&&R<=W-2&&T0>=2&&B<=H-2&&placed.every(function(p){return R<p[0]||L>p[2]||B<p[1]||T0>p[3]});
+      if(ok)placed.push([L,T0,R,B]);
+      a+=0.25;r+=0.35;it++;
+    }
+    if(ok)out+='<text class="cw" tabindex="0" role="button" data-w="'+esc(o.w)+'" x="'+x.toFixed(1)+'" y="'+(y+size*0.32).toFixed(1)+'" text-anchor="middle" font-size="'+size.toFixed(1)+'" style="fill:var('+CCOL[ix%CCOL.length]+')"><title>'+esc(o.w)+': '+o.n+'</title>'+esc(o.w)+'</text>';
+  });
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="group" aria-label="'+esc(T.cloud_h)+'">'+out+'</svg>';
+}
+function renderGo(){
+  var q=S.ideas.filter(function(i){return i.cls==='QW'}).sort(prio).slice(0,4);
+  $('#go').innerHTML=q.length?q.map(function(i){
+    return '<button type="button" class="row c-qw" data-id="'+i.id+'"><span class="idn">'+i.id+'</span><span><span class="it">'+esc(RT(i.problema)||T.no_desc)+'</span><span class="im">'+esc(T.impact)+' '+i.imp+' · '+esc(T.effort)+' '+i.esf+'</span></span></button>';
+  }).join(''):'<p class="empty">'+esc(T.go_empty)+'</p>';
+}
+function renderQuality(){
+  var inc=S.ideas.filter(function(i){return !String(i.propuesta||'').trim()||!String(i.beneficio||'').trim()}).map(function(i){return i.id});
+  var seen={},dup=[];
+  S.ideas.slice().sort(function(a,b){return a.id-b.id}).forEach(function(i){var k=norm(i.problema);if(!k)return;if(seen[k])dup.push(i.id);else seen[k]=1});
+  function ids(a){return a.length?'ID '+a.join(', '):T.none}
+  var jk=S.junk.length?'<div><strong>'+S.junk.length+'</strong><p>'+esc(T.q_junk)+'<small>'+esc(ids(S.junk))+'</small></p></div>':'';
+  $('#quality').innerHTML=jk+'<div><strong>'+inc.length+'</strong><p>'+esc(T.q_inc)+'<small>'+esc(ids(inc))+'</small></p></div><div><strong>'+dup.length+'</strong><p>'+esc(T.q_dup)+'<small>'+esc(ids(dup))+'</small></p></div>';
+}
+
+function filtered(){
+  var q=norm(S.q);
+  return S.ideas.filter(function(i){
+    if(S.cell&&(i.imp!==S.cell.imp||i.esf!==S.cell.esf))return false;
+    if(q&&norm([i.problema,i.propuesta,i.beneficio,i.ambito,RT(i.problema),RT(i.propuesta),RT(i.beneficio)].join(' ')).indexOf(q)<0)return false;
+    return true;
+  }).sort(prio);
+}
+function field(lab,v,wide,cat){var t=String(v==null?'':v).trim();return '<div'+(wide?' class="w"':'')+'><dt>'+esc(lab)+'</dt><dd'+(t?'':' class="na"')+'>'+esc(t?(cat?TX(t):t):T.no_answer)+'</dd></div>'}
+function renderList(){
+  var L=filtered(),n=S.all.length;
+  $('#id-s').textContent=fmt(T.showing,{a:L.length,b:n});
+  var fn=$('#fnote');
+  if(S.cell){fn.hidden=false;fn.innerHTML=esc(T.mx_filter)+'<span class="pill c-all">'+esc(T.impact)+' '+S.cell.imp+' · '+esc(T.effort)+' '+S.cell.esf+'</span> <button class="link" type="button" id="clrcell">'+esc(T.clear)+'</button>'}else{fn.hidden=true;fn.innerHTML=''}
+  $('#list').innerHTML=L.length?L.map(function(i){
+    return '<details class="idea '+CSS[i.cls]+'" data-id="'+i.id+'"'+(S.open===i.id?' open':'')+'><summary><span class="idn">'+i.id+'</span><span><span class="it">'+esc(RT(i.problema)||T.no_desc)+'</span><span class="im">'+esc(T.impact)+' '+i.imp+' · '+esc(T.effort)+' '+i.esf+' · '+esc(T.score)+' '+sgn(i.sc)+(i.ambito?' · '+esc(TX(cap(i.ambito))):'')+'</span></span><span class="pill">'+esc(T.cls[i.cls].one)+'</span></summary>'+
+      '<dl class="dl">'+field(T.f_prop,RT(i.propuesta),true)+field(T.f_change,RT(i.beneficio),true)+field(T.f_freq,i.frecuencia,false,true)+field(T.f_scope,i.alcance,false,true)+field(T.f_inv,i.inversion,false,true)+field(T.f_diff,i.dificultad?i.dificultad+T.of5:'')+field(T.f_dep,i.dependencia,false,true)+field(T.f_sim,i.similar,false,true)+field(T.f_sent,i.d?fd(i.d,true):'')+'</dl></details>';
+  }).join(''):'<p class="empty">'+esc(T.no_match)+'</p>';
+}
+
+function renderAll(){renderHead();renderTiles();renderActivity();renderDist();renderStrip();renderMatrix();renderDonut();renderRings();renderPillars();renderRank();renderScore();renderGo();renderQuality();renderList();renderCloud()}
+
+/* ---------- Events ---------- */
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function goto(id){var el=document.getElementById(id);if(el)el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})}
+function pick(imp,esf){S.sel={imp:imp,esf:esf};renderMatrix();renderStrip()}
+function refilter(){S.cell=null;S.sel=null;$('#fcls').value=S.cls;$('#farea').value=S.area;recompute();renderAll()}
+function openIdea(id){S.q='';$('#q').value='';S.cell=null;S.open=id;renderList();var d=$('details[data-id="'+id+'"]');if(d)d.scrollIntoView({block:'nearest'});goto('ideas')}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('.tile');
+  if(t){S.cls=(t.dataset.f==='ALL'||S.cls===t.dataset.f)?'ALL':t.dataset.f;refilter();return}
+  var b=e.target.closest('.bub');if(b){pick(+b.dataset.i,+b.dataset.e);return}
+  if(e.target.closest('#cellgo')){S.cell={imp:S.sel.imp,esf:S.sel.esf};renderList();goto('ideas');return}
+  if(e.target.closest('#clrcell')){S.cell=null;renderList();return}
+  var cw=e.target.closest('.cw');if(cw){S.q=cw.dataset.w;$('#q').value=S.q;S.cell=null;renderList();goto('ideas');return}
+  var tb=e.target.closest('.tab');if(tb){S.tab=tb.dataset.t;renderDist();return}
+  var r=e.target.closest('.row,tr[data-id]');
+  if(r){openIdea(+r.dataset.id)}
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  var b=e.target.closest&&e.target.closest('.bub');if(b){e.preventDefault();pick(+b.dataset.i,+b.dataset.e);return}
+  var cw=e.target.closest&&e.target.closest('.cw');if(cw){e.preventDefault();cw.dispatchEvent(new MouseEvent('click',{bubbles:true}));return}
+  var r=e.target.closest&&e.target.closest('tr[data-id]');if(r){e.preventDefault();openIdea(+r.dataset.id)}
+});
+$('#fcls').addEventListener('change',function(e){S.cls=e.target.value;refilter()});
+$('#farea').addEventListener('change',function(e){S.area=e.target.value;refilter()});
+function paintRl(){$$('#rtog button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.rl===S.rl))})}
+S.rl=T.rtog?'en':'es';
+$$('#rtog button').forEach(function(b){b.addEventListener('click',function(){S.rl=b.dataset.rl;try{localStorage.setItem('lims-rl',S.rl)}catch(e){}paintRl();renderStrip();renderRank();renderGo();renderList();renderCloud()})});
+$('#q').addEventListener('input',function(e){S.q=e.target.value;renderList()});
+
+/* Section highlight in the nav */
+var links=$$('.nav a');
+links.forEach(function(a){a.addEventListener('click',function(){links.forEach(function(x){x.removeAttribute('aria-current')});a.setAttribute('aria-current','true')})});
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(en){if(en.isIntersecting){links.forEach(function(a){if(a.getAttribute('href')==='#'+en.target.id)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current')})}});
+  },{rootMargin:'-15% 0px -70% 0px'});
+  ['resumen','matriz','ranking','analisis','ideas'].forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el)});
+}
+
+/* Theme */
+var th=$('#theme');
+function isDark(){var a=document.documentElement.getAttribute('data-theme');return a==='dark'||(!a&&matchMedia('(prefers-color-scheme: dark)').matches)}
+function paintTheme(){th.innerHTML=icon(isDark()?'sun':'moon')}
+try{var st=localStorage.getItem('lims-theme');if(st)document.documentElement.setAttribute('data-theme',st)}catch(e){}
+th.addEventListener('click',function(){var n=isDark()?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('lims-theme',n)}catch(e){}paintTheme()});
+paintTheme();
+
+/* Resize */
+var raf=0;
+if('ResizeObserver' in window){
+  var ro=new ResizeObserver(function(){cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){renderActivity();renderMatrix();renderCloud()})});
+  ro.observe($('#activity'));ro.observe($('#matrix'));ro.observe($('#cloud'));
+}
+
+/* ---------- Excel upload ---------- */
+function msg(t,err){var m=$('#msg');m.textContent=t;m.className=err?'err':''}
+function toIso(v){
+  if(v instanceof Date)return isNaN(v)?'':v.toISOString().slice(0,16);
+  if(typeof v==='number')return new Date(Math.round((v-25569)*864e5)).toISOString().slice(0,16);
+  var d=new Date(v);return isNaN(d)?'':d.toISOString().slice(0,16);
+}
+function pilCode(v){var n=norm(v);return n.indexOf('eficiencia')>=0?'EFF':n.indexOf('sostenib')>=0?'SUS':n.indexOf('calidad')>=0?'QUA':n==='she'?'SHE':(n.indexOf('unconditional')>=0||n.indexOf('incondicional')>=0)?'UC':''}
+function evalPilars(wb){
+  var m={},ws=wb.Sheets['Evaluación']||wb.Sheets['Evaluacion'];if(!ws)return m;
+  var r=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+  var hi=r.findIndex(function(x){return x.some(function(c){return norm(c)==='categoria'})});if(hi<0)return m;
+  var H=r[hi].map(norm),ci=H.indexOf('id'),cc=H.indexOf('categoria');if(ci<0||cc<0)return m;
+  r.slice(hi+1).forEach(function(x){var id=+x[ci],p=pilCode(x[cc]);if(id&&p)m[id]=p});
+  return m;
+}
+/*NEW-BEGIN*/
+var NP={hi:8,he:10,imn:3,imx:11,emn:4,emx:15};
+function isNw(r){return r.some(function(c){return norm(c).indexOf('identificaste')>=0})}
+function decK(k){return String(k).replace(/_x([0-9a-f]{4})_/gi,function(m,h){return String.fromCharCode(parseInt(h,16))})}
+function newTable(rows,P){
+  var hi=rows.findIndex(isNw),H=rows[hi].map(norm);
+  function col(k){return H.findIndex(function(h){return h.indexOf(k)>=0})}
+  var C={id:H.indexOf('id'),t:H.findIndex(function(h){return h.indexOf('hora de inicio')>=0||h.indexOf('start time')>=0}),problema:col('identificaste'),propuesta:H.findIndex(function(h){return h.indexOf('tu propuesta')>=0&&h.indexOf('cambiaria')<0}),beneficio:col('cambiaria'),f:col('frecuencia'),a:col('alcance'),p:col('pilar'),ct:col('categorias'),inv:col('inversion'),cp:col('compleja'),tm:col('cuanto tiempo'),dp:col('depende'),sm:col('parecida')};
+  var miss=['problema','f','a','ct','inv','cp','tm','dp'].filter(function(k){return C[k]<0});
+  if(miss.length)throw new Error(T.err_cols+miss.join(', ')+'.');
+  function g(r,k){return C[k]<0?'':r[C[k]]}
+  var out=[];
+  rows.slice(hi+1).forEach(function(r){
+    if(!String(g(r,'problema')).trim())return;
+    var fr=norm(g(r,'f')),al=norm(g(r,'a')),iv=norm(g(r,'inv')),dp=norm(g(r,'dp')),tm=norm(g(r,'tm')),id=+g(r,'id');
+    var F=fr.indexOf('todos')>=0?4:fr.indexOf('semana')>=0?3:fr.indexOf('2-4')>=0?2:1,
+    A=al.indexOf('fuera')>=0?3:al.indexOf('mas de un rol')>=0?2:1,
+    cats=String(g(r,'ct')).split(';').map(function(z){return z.trim()}).filter(Boolean),
+    I=iv.indexOf('si')===0?3:iv.indexOf('no estoy')>=0?2:1,
+    CP=+g(r,'cp')||3,DP=dp.indexOf('sin')===0?1:dp.indexOf('parcial')>=0?2:dp.indexOf('alta')>=0?3:1,
+    TM=tm.indexOf('menos')>=0?1:tm.indexOf('1 a 3')>=0?2:tm.indexOf('3 a 6')>=0?3:tm.indexOf('mas de 6')>=0?4:2;
+    out.push({id:id||out.length+1,t:toIso(g(r,'t')),problema:String(g(r,'problema')).trim(),propuesta:String(g(r,'propuesta')).trim(),beneficio:String(g(r,'beneficio')).trim(),frecuencia:String(g(r,'f')).trim(),alcance:String(g(r,'a')).trim(),ambito:cats[0]||'',inversion:I===3?'Sí':I===2?'No estoy seguro':'No',dificultad:CP,dependencia:DP===1?'No':'Sí',similar:norm(g(r,'sm')).indexOf('si')===0?'Sí':'No',pilar:pilCode(g(r,'p')),imp:F+A+Math.min(4,cats.length),esf:I+CP+DP+TM});
+  });
+  if(!out.length)throw new Error(T.err_empty);
+  M={hi:P.hi,sp:P.he-.5,xa:P.emn,xb:P.emx,ya:P.imn,yb:P.imx,nw:1,he:P.he};
+  return out;
+}
+function parseNew(wb){
+  var rows=null,names=['Resultados'].concat(wb.SheetNames);
+  for(var i=0;i<names.length&&!rows;i++){var w=wb.Sheets[names[i]];if(!w)continue;var r=XLSX.utils.sheet_to_json(w,{header:1,defval:'',raw:true});if(r.slice(0,5).some(isNw))rows=r}
+  if(!rows)return null;
+  var P=Object.assign({},NP),pw=wb.Sheets['Parámetros']||wb.Sheets['Parametros'],K={'impacto alto desde':'hi','esfuerzo alto desde':'he','impacto minimo':'imn','impacto maximo':'imx','esfuerzo minimo':'emn','esfuerzo maximo':'emx'};
+  if(pw)XLSX.utils.sheet_to_json(pw,{header:1,defval:''}).forEach(function(r){r.forEach(function(c,j){var k=K[norm(c)];if(k&&+r[j+1])P[k]=+r[j+1]})});
+  return newTable(rows,P);
+}
+function jsonToRows(d){
+  var a=Array.isArray(d)?d:(d&&(d.value||d.rows||d.body||d.data))||[];
+  if(!Array.isArray(a)||!a.length)throw new Error(T.err_empty);
+  var ks=[];a.forEach(function(o){Object.keys(o).forEach(function(k){if(ks.indexOf(k)<0)ks.push(k)})});
+  var tb=[ks.map(decK)].concat(a.map(function(o){return ks.map(function(k){return o[k]==null?'':o[k]})}));
+  if(!isNw(tb[0]))throw new Error(T.err_sheet);
+  return newTable(tb,Object.assign({},NP,(d&&d.params)||{}));
+}
+/*NEW-END*/
+function parseWb(wb){
+  var nw=parseNew(wb);if(nw)return nw;
+  var ws=wb.Sheets['Resultados'],rows;
+  function has(r){return r.some(function(c){return norm(c).indexOf('observaste')>=0})}
+  if(ws){rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true})}
+  if(!rows||!rows.some(has)){
+    rows=null;
+    for(var i=0;i<wb.SheetNames.length;i++){var r=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]],{header:1,defval:'',raw:true});if(r.slice(0,5).some(has)){rows=r;break}}
+  }
+  if(!rows)throw new Error(T.err_sheet);
+  var hi=rows.findIndex(has),H=rows[hi].map(norm);
+  function col(k){return H.findIndex(function(h){return h.indexOf(k)>=0})}
+  var C={id:H.indexOf('id'),t:col('hora de inicio'),problema:col('observaste'),propuesta:H.findIndex(function(h){return h.indexOf('tu propuesta')>=0&&h.indexOf('cambiaria')<0}),beneficio:col('cambiaria'),frecuencia:col('frecuencia'),alcance:col('alcance'),ambito:col('ambito'),inversion:col('inversion'),dificultad:col('dificil'),dependencia:col('depende'),similar:col('parecida')};
+  var miss=['problema','frecuencia','alcance','ambito','inversion','dificultad','dependencia'].filter(function(k){return C[k]<0});
+  if(miss.length)throw new Error(T.err_cols+miss.join(', ')+'.');
+  function g(r,k){return C[k]<0?'':r[C[k]]}
+  var out=[],PM=evalPilars(wb);
+  rows.slice(hi+1).forEach(function(r){
+    if(!String(g(r,'problema')).trim())return;
+    var id=+g(r,'id');
+    out.push({id:id||out.length+1,t:toIso(g(r,'t')),problema:String(g(r,'problema')).trim(),propuesta:String(g(r,'propuesta')).trim(),beneficio:String(g(r,'beneficio')).trim(),frecuencia:String(g(r,'frecuencia')).trim(),alcance:String(g(r,'alcance')).trim(),ambito:String(g(r,'ambito')).trim(),inversion:String(g(r,'inversion')).trim(),dificultad:+g(r,'dificultad')||0,dependencia:String(g(r,'dependencia')).trim(),similar:String(g(r,'similar')).trim(),pilar:PM[id]||''});
+  });
+  if(!out.length)throw new Error(T.err_empty);
+  M=Object.assign({},M0);
+  return out;
+}
+$('#file').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0];if(!f)return;
+  if(!window.XLSX){msg(T.err_reader,true);return}
+  msg(T.reading+f.name+'…');
+  f.arrayBuffer().then(function(buf){
+    var rows=parseWb(XLSX.read(buf,{type:'array'}));
+    setData(rows,f.name,true);
+    UPLOADED=true;if(!REMOTE){try{localStorage.setItem('lims-data',JSON.stringify({label:f.name,rows:rows,M:M}))}catch(x){}}
+    msg(T.done+plu(rows.length,T.loaded)+'.');
+  }).catch(function(err){msg(err.message||T.err_read,true)});
+  e.target.value='';
+});
+$('#reset').addEventListener('click',function(){
+  UPLOADED=false;
+  if(REMOTE){M=Object.assign({},REMOTE.M);setData(REMOTE.rows,'data.json',false);msg(T.back);return}
+  try{localStorage.removeItem('lims-data')}catch(e){}
+  M=Object.assign({},M0);setData(RAW,SRC0,false);msg(T.back);
+});
+var REMOTE=null,UPLOADED=false;
+function loadRemote(){
+  if(!window.fetch||location.protocol==='file:')return;
+  fetch('data.json?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)return null;return r.json().catch(function(){return null})}).then(function(d){
+    if(!d)return;
+    var rows;try{rows=jsonToRows(d)}catch(er){msg('data.json: '+(er.message||''),true);return}
+    REMOTE={rows:rows,M:Object.assign({},M)};
+    try{localStorage.removeItem('lims-data')}catch(e){}
+    if(!UPLOADED){setData(rows,'data.json',false);msg(T.done+plu(rows.length,T.loaded)+'.')}
+  }).catch(function(){});
+}
+
+/* Start with the last upload on this device, or the original Excel */
+var start=null;
+try{var sv=JSON.parse(localStorage.getItem('lims-data')||'null');if(sv&&sv.rows&&sv.rows.length)start=sv}catch(e){}
+if(start){if(start.M)M=start.M;setData(start.rows,start.label,true)}else{M=Object.assign({},M0);setData(RAW,SRC0,false)}
+loadRemote();
+})();
+</script>
+
+</body></html>
